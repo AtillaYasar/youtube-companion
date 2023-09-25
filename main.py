@@ -115,14 +115,22 @@ def get_transcript(url):
 def nat_dev(model, prompt, print_func=lambda x:None):
     # prepare request
     url = "https://nat.dev/api/inference/text"
+    if model == 'llama':
+        name = 'replicate:llama70b-v2-chat'
+        tag = 'replicate:llama70b-v2-chat'
+        provider = 'replicate'
+    else:
+        name = model
+        tag = f'openai:{model}'
+        provider = 'openai'
     payload_dict = {
         "prompt": prompt,
         "models": [
             {
-                "name": f"openai:{model}",
-                "tag": f"openai:{model}",
+                "name": name,
+                "tag": tag,
                 "capabilities": ["chat"],
-                "provider": "openai",
+                "provider": provider,
                 "parameters": {
                     "temperature": 0.5,
                     "maximumLength": 400,
@@ -138,6 +146,10 @@ def nat_dev(model, prompt, print_func=lambda x:None):
         ],
         "stream": True,
     }
+    if provider == 'replicate':
+        payload_dict['models'][0]['parameters']['repetitionPenalty'] = 1
+        del payload_dict['models'][0]['parameters']['presencePenalty']
+        del payload_dict['models'][0]['parameters']['frequencyPenalty']
     payload = json.dumps(payload_dict)
     session = natdev_session
     headers = {
